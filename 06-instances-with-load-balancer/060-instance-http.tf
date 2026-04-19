@@ -12,39 +12,31 @@ resource "azurerm_network_interface" "http" {
   }
 }
 
-resource "azurerm_virtual_machine" "http" {
+resource "azurerm_linux_virtual_machine" "http" {
   for_each = var.vm_names
 
   name                  = each.value
   location              = azurerm_resource_group.generic.location
   resource_group_name   = azurerm_resource_group.generic.name
   network_interface_ids = [azurerm_network_interface.http[each.key].id]
-  vm_size               = "Standard_DS1_v2"
+  size                  = "Standard_DS1_v2"
 
-  delete_os_disk_on_termination    = true
-  delete_data_disks_on_termination = true
+  computer_name                   = "hostname"
+  admin_username                  = "testadmin"
+  admin_password                  = "Password1234!"
+  disable_password_authentication = false
+  custom_data                     = filebase64("scripts/first-boot.sh")
 
-  storage_image_reference {
+  source_image_reference {
     publisher = "Canonical"
-    offer     = "UbuntuServer"
-    sku       = "18.04-LTS"
+    offer     = "ubuntu-24_04-lts"
+    sku       = "server"
     version   = "latest"
   }
 
-  storage_os_disk {
-    name              = "myosdisk-${each.value}"
-    create_option     = "FromImage"
-    managed_disk_type = "Standard_LRS"
-  }
-
-  os_profile {
-    computer_name  = "hostname"
-    admin_username = "testadmin"
-    admin_password = "Password1234!"
-    custom_data    = file("scripts/first-boot.sh")
-  }
-
-  os_profile_linux_config {
-    disable_password_authentication = false
+  os_disk {
+    name                 = "myosdisk-${each.value}"
+    caching              = "ReadWrite"
+    storage_account_type = "Standard_LRS"
   }
 }
