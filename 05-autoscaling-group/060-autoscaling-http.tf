@@ -1,42 +1,30 @@
-resource "azurerm_virtual_machine_scale_set" "http" {
+resource "azurerm_linux_virtual_machine_scale_set" "http" {
   name                = "http-scale-set"
   location            = azurerm_resource_group.generic.location
   resource_group_name = azurerm_resource_group.generic.name
+  sku                 = "Standard_F2s_v2"
+  instances           = 2
+  upgrade_mode        = "Manual"
 
-  upgrade_policy_mode = "Manual"
+  computer_name_prefix            = "http-vm"
+  admin_username                  = "testadmin"
+  admin_password                  = "Password1234!"
+  disable_password_authentication = false
+  custom_data                     = filebase64("scripts/first-boot-http.sh")
 
-  sku {
-    name     = "Standard_F2"
-    tier     = "Standard"
-    capacity = 2
-  }
-
-  storage_profile_image_reference {
+  source_image_reference {
     publisher = "Canonical"
-    offer     = "UbuntuServer"
-    sku       = "18.04-LTS"
+    offer     = "ubuntu-24_04-lts"
+    sku       = "server"
     version   = "latest"
   }
 
-  storage_profile_os_disk {
-    name              = ""
-    caching           = "ReadWrite"
-    create_option     = "FromImage"
-    managed_disk_type = "Standard_LRS"
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "Standard_LRS"
   }
 
-  os_profile {
-    computer_name_prefix = "http-vm"
-    admin_username       = "testadmin"
-    admin_password       = "Password1234!"
-    custom_data          = file("scripts/first-boot-http.sh")
-  }
-
-  os_profile_linux_config {
-    disable_password_authentication = false
-  }
-
-  network_profile {
+  network_interface {
     name    = "internal"
     primary = true
 
@@ -53,7 +41,7 @@ resource "azurerm_monitor_autoscale_setting" "http" {
   name                = "HttpAutoscaleSetting"
   resource_group_name = azurerm_resource_group.generic.name
   location            = azurerm_resource_group.generic.location
-  target_resource_id  = azurerm_virtual_machine_scale_set.http.id
+  target_resource_id  = azurerm_linux_virtual_machine_scale_set.http.id
 
   profile {
     name = "defaultProfile"
@@ -67,7 +55,7 @@ resource "azurerm_monitor_autoscale_setting" "http" {
     rule {
       metric_trigger {
         metric_name        = "Percentage CPU"
-        metric_resource_id = azurerm_virtual_machine_scale_set.http.id
+        metric_resource_id = azurerm_linux_virtual_machine_scale_set.http.id
         time_grain         = "PT1M"
         statistic          = "Average"
         time_window        = "PT5M"
@@ -87,7 +75,7 @@ resource "azurerm_monitor_autoscale_setting" "http" {
     rule {
       metric_trigger {
         metric_name        = "Percentage CPU"
-        metric_resource_id = azurerm_virtual_machine_scale_set.http.id
+        metric_resource_id = azurerm_linux_virtual_machine_scale_set.http.id
         time_grain         = "PT1M"
         statistic          = "Average"
         time_window        = "PT5M"

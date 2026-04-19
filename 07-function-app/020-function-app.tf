@@ -15,7 +15,7 @@ resource "azurerm_service_plan" "this" {
   resource_group_name = azurerm_resource_group.generic.name
   location            = azurerm_resource_group.generic.location
   os_type             = "Linux"
-  sku_name            = "Y1"
+  sku_name            = "B1"
 }
 
 data "archive_file" "this" {
@@ -69,10 +69,19 @@ resource "azurerm_linux_function_app" "this" {
   }
 }
 
+resource "azurerm_log_analytics_workspace" "this" {
+  name                = "logs-${random_id.suffix.hex}"
+  resource_group_name = azurerm_resource_group.generic.name
+  location            = azurerm_resource_group.generic.location
+  sku                 = "PerGB2018"
+  retention_in_days   = 30
+}
+
 resource "azurerm_application_insights" "this" {
   name                = "my-function-app-${random_id.suffix.hex}"
   resource_group_name = azurerm_resource_group.generic.name
   location            = azurerm_resource_group.generic.location
+  workspace_id        = azurerm_log_analytics_workspace.this.id
   application_type    = "other"
 
   lifecycle {

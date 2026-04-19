@@ -17,9 +17,8 @@ resource "azurerm_lb" "db" {
 }
 
 resource "azurerm_lb_backend_address_pool" "db" {
-  resource_group_name = azurerm_resource_group.generic.name
-  name                = "DbBackEndAddressPool"
-  loadbalancer_id     = azurerm_lb.db.id
+  name            = "DbBackEndAddressPool"
+  loadbalancer_id = azurerm_lb.db.id
 }
 
 resource "azurerm_lb_nat_pool" "db" {
@@ -34,9 +33,8 @@ resource "azurerm_lb_nat_pool" "db" {
 }
 
 resource "azurerm_lb_probe" "db" {
-  resource_group_name = azurerm_resource_group.generic.name
-  name                = "db-probe"
-  loadbalancer_id     = azurerm_lb.db.id
-  protocol            = "Tcp"
-  port                = 3306
+  name            = "db-probe"
+  loadbalancer_id = azurerm_lb.db.id
+  protocol        = "Tcp"
+  port            = 3306
 }

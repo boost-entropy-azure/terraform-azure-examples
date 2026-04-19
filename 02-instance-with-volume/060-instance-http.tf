@@ -2,7 +2,7 @@ resource "azurerm_public_ip" "http" {
   name                = "http-pip"
   location            = azurerm_resource_group.generic.location
   resource_group_name = azurerm_resource_group.generic.name
-  allocation_method   = "Dynamic"
+  allocation_method   = "Static"
 }
 
 resource "azurerm_network_interface" "http" {
@@ -18,37 +18,29 @@ resource "azurerm_network_interface" "http" {
   }
 }
 
-resource "azurerm_virtual_machine" "http" {
+resource "azurerm_linux_virtual_machine" "http" {
   name                  = var.http_vm_name
   location              = azurerm_resource_group.generic.location
   resource_group_name   = azurerm_resource_group.generic.name
   network_interface_ids = [azurerm_network_interface.http.id]
-  vm_size               = "Standard_DS1_v2"
+  size                  = "Standard_DS1_v2"
 
-  delete_os_disk_on_termination    = true
-  delete_data_disks_on_termination = true
+  computer_name                   = "hostname"
+  admin_username                  = "testadmin"
+  admin_password                  = "Password1234!"
+  disable_password_authentication = false
+  custom_data                     = filebase64("scripts/first-boot.sh")
 
-  storage_image_reference {
+  source_image_reference {
     publisher = "Canonical"
-    offer     = "UbuntuServer"
-    sku       = "18.04-LTS"
+    offer     = "ubuntu-24_04-lts"
+    sku       = "server"
     version   = "latest"
   }
 
-  storage_os_disk {
-    name              = "http-osdisk1"
-    create_option     = "FromImage"
-    managed_disk_type = "Standard_LRS"
-  }
-
-  os_profile {
-    computer_name  = "hostname"
-    admin_username = "testadmin"
-    admin_password = "Password1234!"
-    custom_data    = file("scripts/first-boot.sh")
-  }
-
-  os_profile_linux_config {
-    disable_password_authentication = false
+  os_disk {
+    name                 = "http-osdisk1"
+    caching              = "ReadWrite"
+    storage_account_type = "Standard_LRS"
   }
 }
